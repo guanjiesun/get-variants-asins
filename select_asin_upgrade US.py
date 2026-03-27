@@ -1,11 +1,12 @@
 import random
-from bs4 import BeautifulSoup
-import requests
 import re
 import json
 import time
-from openpyxl import load_workbook
 import os
+
+from openpyxl import load_workbook
+from bs4 import BeautifulSoup
+import requests
 import openpyxl
 from openpyxl import Workbook
 
