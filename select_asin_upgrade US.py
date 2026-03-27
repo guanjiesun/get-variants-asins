@@ -1,14 +1,13 @@
-import random
+import os
 import re
+import sys
 import json
 import time
-import os
 
-from openpyxl import load_workbook
-from bs4 import BeautifulSoup
 import requests
-import openpyxl
+from bs4 import BeautifulSoup
 from openpyxl import Workbook
+from openpyxl import load_workbook
 
 def extract_all_amazon_cookies(headers):
     s1 = requests.Session()
@@ -68,7 +67,7 @@ def convert_json_to_excel(json_data_string, output_filename="Amazon_price_spider
         if os.path.exists(output_filename):
             print(f"File '{output_filename}' exists. Loading workbook...")
             # Load the existing workbook
-            wb = openpyxl.load_workbook(output_filename)
+            wb = load_workbook(output_filename)
             
             # Check if the specified sheet exists
             if sheet_name in wb.sheetnames:
@@ -147,70 +146,54 @@ def get_target_dict(html_content):
         print("Could not find dimensionValuesDisplayData in the text.")
         return {} # Return an empty dictionary on failure to prevent crashes
 
-# --- Main Execution Block ---
+def main():
+    headers = {
+        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'accept-language': 'en-GB,en-US;q=0.9,en;q=0.8,zh-CN;q=0.7,zh;q=0.6',
+        'device-memory': '8',
+        'downlink': '1.45',
+        'dpr': '1',
+        'ect': '3g',
+        'priority': 'u=0, i',
+        'rtt': '300',
+        'sec-ch-device-memory': '8',
+        'sec-ch-dpr': '1',
+        'sec-ch-ua': '"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"Windows"',
+        'sec-ch-ua-platform-version': '"10.0.0"',
+        'sec-ch-viewport-width': '2560',
+        'sec-fetch-dest': 'document',
+        'sec-fetch-mode': 'navigate',
+        'sec-fetch-site': 'none',
+        'sec-fetch-user': '?1',
+        'upgrade-insecure-requests': '1',
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+        'viewport-width': '2560',
+    }
+    cookies, session = extract_all_amazon_cookies(headers)
+    if session is None:
+        print("未能成功获取Amazon会话，程序退出。")
+        sys.exit(1)
 
-headers = {
-    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-    'accept-language': 'en-GB,en-US;q=0.9,en;q=0.8,zh-CN;q=0.7,zh;q=0.6',
-    'device-memory': '8',
-    'downlink': '1.45',
-    'dpr': '1',
-    'ect': '3g',
-    'priority': 'u=0, i',
-    'rtt': '300',
-    'sec-ch-device-memory': '8',
-    'sec-ch-dpr': '1',
-    'sec-ch-ua': '"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"',
-    'sec-ch-ua-mobile': '?0',
-    'sec-ch-ua-platform': '"Windows"',
-    'sec-ch-ua-platform-version': '"10.0.0"',
-    'sec-ch-viewport-width': '2560',
-    'sec-fetch-dest': 'document',
-    'sec-fetch-mode': 'navigate',
-    'sec-fetch-site': 'none',
-    'sec-fetch-user': '?1',
-    'upgrade-insecure-requests': '1',
-    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-    'viewport-width': '2560',
-}
-
-# Fix: Use extract_all_amazon_cookies to get a session (s1) and initial cookies
-cookies, s1 = extract_all_amazon_cookies(headers)
-
-if s1 is None: # 检查是否成功获取cookies和session
-    print("未能成功获取Amazon会话，程序退出。")
-else:
     time.sleep(2)
-    seq = 0
-    # FIX: Added B07B6MQ5BQ to ALL_ASIN for demonstration, assuming it was missed in the snippet you ran
-    ALL_ASIN = ["B0BLYSGFRW",'B0DSPZJKTB']
-    ALL_SHEET = ["B0BLYSGFRW",'B0DSPZJKTB'] 
-    # FIX: The ALL_SHEET must match the length of ALL_ASIN. Duplicating sheet name for now.
+    asin = 'B0BLYSGFRW'
+    sheet_name = asin
 
-    
-    for asin in ALL_ASIN:
-        print(f"\n--- Processing ASIN: {asin} in sheet: {ALL_SHEET[seq]} ---")
-        response = s1.get(
-            f'https://www.amazon.com/dp/{asin}',
-            headers=headers
-        )
-        html_content = response.text
-        
-        # FIX: Directly use the result of get_target_dict, which is the inner dictionary
-        actual_product_data = get_target_dict(html_content) 
+    print(f"\n--- Processing ASIN: {asin} in sheet: {sheet_name} ---")
+    response = session.get(
+        f'https://www.amazon.com/dp/{asin}',
+        headers=headers
+    )
+    actual_product_data = get_target_dict(response.text)
 
-        if not actual_product_data:
-            print(f"Skipping ASIN {asin}: No dimension data found.")
-            seq += 1
-            pause_duration = random.randint(1, 2)
-            time.sleep(pause_duration)
-            continue
-            
-        # Convert this inner dictionary to a JSON string
-        json_string_for_conversion = json.dumps(actual_product_data)
+    if not actual_product_data:
+        print(f"Skipping ASIN {asin}: No dimension data found.")
+        sys.exit(1)
 
-        # Call the function with the correctly formatted JSON string
-        convert_json_to_excel(json_string_for_conversion,"Amazon_price_spider_US.xlsx",ALL_SHEET[seq])
-        seq += 1
-        pause_duration = random.randint(1, 2)
-        time.sleep(pause_duration)
+    # Convert this inner dictionary to a JSON string
+    json_string_for_conversion = json.dumps(actual_product_data)
+    convert_json_to_excel(json_string_for_conversion,"Amazon_price_spider_US.xlsx", sheet_name)
+
+if __name__ == '__main__':
+    main()
