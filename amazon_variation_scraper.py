@@ -10,9 +10,9 @@ from openpyxl import Workbook
 from openpyxl import load_workbook
 
 def extract_all_amazon_cookies(headers):
-    s1 = requests.Session()
-    # Attempt to handle potential captcha page
-    response_initial = s1.get('https://www.amazon.com/errors/validateCaptcha', headers=headers)
+    session = requests.Session()
+    # 尝试处理可能出现的验证码页面
+    response_initial = session.get('https://www.amazon.com/errors/validateCaptcha', headers=headers)
 
     soup = BeautifulSoup(response_initial.text, 'html.parser')
 
@@ -27,7 +27,7 @@ def extract_all_amazon_cookies(headers):
         if 'captcha' not in response_initial.text.lower():
             # If no amzn/field-keywords found, but also no captcha, assume success and return session
             print("INFO: Initial request did not encounter a Captcha. Proceeding with the session.")
-            return s1.cookies.get_dict(), s1
+            return session.cookies.get_dict(), session
         
         print("错误: 未能在初始验证码页面找到 'amzn' 或 'field-keywords'。")
         return None, None # 返回 None, None 以便主程序处理
@@ -39,11 +39,11 @@ def extract_all_amazon_cookies(headers):
     }
 
     # Submit the captcha form (even if field-keywords is empty/bogus)
-    s1.get('https://www.amazon.com/errors/validateCaptcha', params=params, headers=headers)
+    session.get('https://www.amazon.com/errors/validateCaptcha', params=params, headers=headers)
 
-    final_cookies = s1.cookies.get_dict()
+    final_cookies = session.cookies.get_dict()
     
-    return final_cookies, s1
+    return final_cookies, session
 
 def convert_json_to_excel(json_data_string, output_filename="Amazon_price_spider_US.xlsx", sheet_name="Sheet1"):
     """
