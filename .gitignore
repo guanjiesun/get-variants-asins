@@ -12,3 +12,6 @@ wheels/
 # IDEs
 .idea/
 .vscode/
+
+# Excel files
+*.xlsx
