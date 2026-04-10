@@ -1,29 +1,16 @@
-import json
+"""
+根据 ASIN 详情页获取所有变体的 ASIN 信息
+工具: zendriver
+"""
+
 import asyncio
 
 import zendriver
 import pandas as pd
 
-def get_mappings(html_content) -> list[dict]:
-    result = list()
-    key_name = "dimensionValuesDisplayData"
-    lines = html_content.splitlines()
-    for line in lines:
-        if key_name in line:
-            line = line.strip()
-            key, value = line.split(':', 1)
-            value = value.strip(' ,')
-            d = json.loads(value)
+from .get_asins import get_asins
 
-            for asin, color_size in d.items():
-                info = dict()
-                info['ASIN'] = asin.strip()
-                info['COLOR'] = color_size[0].strip()
-                info['SIZE'] = color_size[1].strip()
-                result.append(info)
-    return result
-
-async def main():
+async def get_asins_by_zendriver():
     asin = 'B0BLYSGFRW'
     url = f'https://www.amazon.com/dp/{asin}'
 
@@ -38,15 +25,15 @@ async def main():
     html_content = await tab.get_content()
 
     # 从网页源码中找到所有变体的信息（asin-size-color）
-    result = get_mappings(html_content)
+    result = get_asins(html_content)
 
     # 将结果写入 excel 文件
     df = pd.DataFrame(result)
-    df.to_excel(f'{asin}.xlsx', index=False, engine='openpyxl')
+    df.to_excel(f'{asin}-zendriver.xlsx', index=False, engine='openpyxl')
 
     # 关闭浏览器
     await asyncio.sleep(3)
     await browser.stop()
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    asyncio.run(get_asins_by_zendriver())
