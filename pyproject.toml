@@ -5,6 +5,9 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10.11"
 dependencies = [
+    "httpx[cli]>=0.28.1",
+    "ipython>=8.39.0",
+    "lxml>=6.0.3",
     "openpyxl==3.1.5",
     "pandas==2.3.3",
     "zendriver>=0.15.3",
