@@ -9,7 +9,7 @@ from pathlib import Path
 import httpx
 import pandas as pd
 
-from .get_asins import get_asins
+from get_asins import get_asins
 
 async def get_asins_by_httpx(asin: str, dst_folder: Path) -> None:
     # 设置输入参数
@@ -31,4 +31,4 @@ async def get_asins_by_httpx(asin: str, dst_folder: Path) -> None:
         df.to_excel(dst_file, index=False, engine='openpyxl')
 
 if __name__ == '__main__':
-    asyncio.run(get_asins_by_httpx(asin='B0BLYSGFRW', dst_folder=Path().cwd()))
+    asyncio.run(get_asins_by_httpx(asin='B0FKG8DG25', dst_folder=Path().cwd()))
