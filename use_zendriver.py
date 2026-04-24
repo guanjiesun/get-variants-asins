@@ -9,7 +9,7 @@ from pathlib import Path
 import zendriver
 import pandas as pd
 
-from .get_asins import get_asins
+from get_asins import get_asins
 
 async def get_asins_by_zendriver(asin: str, dst_folder: Path) -> None:
     # 设置输入参数
